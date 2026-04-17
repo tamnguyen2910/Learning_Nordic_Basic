@@ -1,0 +1,32 @@
+/*
+ * Pro Micro nRF52840 Device Tree Overlay
+ * 
+ * Changes:
+ * - Disable UART0 to free P0.09 (TX) and P0.10 (RX) for GPIO use
+ * - Configure P0.09 and P0.10 as GPIO pins
+ */
+
+/* Configure NFC pins as GPIO */
+&uicr {
+    nfct-pins-as-gpios;
+};
+
+/* Disable UART0 to free P0.09 and P0.10 for GPIO */
+&uart0 {
+    status = "disabled";
+};
+
+/* Configure P0.09 and P0.10 as GPIO output (default state) */
+&gpio0 {
+    status = "okay";
+};
+
+/* Alternative: If you want to keep UART but use different pins */
+/* You can remap UART0 to different pins, e.g., P1.00 and P1.01 */
+/*
+&uart0 {
+    pinctrl-0 = <&uart0_alt_default>;
+    pinctrl-1 = <&uart0_alt_sleep>;
+    pinctrl-names = "default", "sleep";
+};
+*/
