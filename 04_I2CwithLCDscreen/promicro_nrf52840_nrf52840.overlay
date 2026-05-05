@@ -1,0 +1,38 @@
+/*
+ * Device tree overlay for Pro Micro nRF52840 with SSD1309 OLED display
+ *
+ * I2C Configuration:
+ *   SDA: P1.00 (I2C0 SDA)
+ *   SCL: P0.11 (I2C0 SCL)
+ *   Speed: 400kHz (Fast Mode)
+ *
+ * Display Configuration:
+ *   Controller: SSD1309 (compatible with SSD1306 driver)
+ *   Resolution: 128x64 pixels
+ *   I2C Address: 0x3C
+ *
+ * Note: pinctrl (i2c0_default/i2c0_sleep) and pin assignments are already
+ * defined in the board's promicro_nrf52840-pinctrl.dtsi with the same pins.
+ */
+
+&i2c0 {
+    clock-frequency = <I2C_BITRATE_FAST>;
+
+    ssd1306: ssd1306@3c {
+        compatible = "solomon,ssd1306fb";
+        reg = <0x3c>;
+        width = <128>;
+        height = <64>;
+        segment-offset = <0>;
+        page-offset = <0>;
+        display-offset = <0>;
+        multiplex-ratio = <63>;
+        prechargep = <0x22>;
+    };
+
+    /* BH1750 ambient light sensor (I2C address 0x23) */
+    bh1750: bh1750@23 {
+        compatible = "rohm,bh1750";
+        reg = <0x23>;
+    };
+};
