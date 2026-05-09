@@ -6,5 +6,6 @@
 int display_init(void);
 void display_set_ble_connected(bool connected);
 void display_set_led(bool on);
+void display_set_lux(float lux);
 
 #endif

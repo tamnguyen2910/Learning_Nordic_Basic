@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
+#include <stdio.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/device.h>
@@ -16,6 +17,7 @@ static const struct device *display_dev;
 static uint8_t fb[FB_SIZE];
 static bool ble_connected;
 static bool led_on;
+static float current_lux;
 
 static void fb_invert_pages(uint8_t start_page, uint8_t num_pages)
 {
@@ -23,13 +25,6 @@ static void fb_invert_pages(uint8_t start_page, uint8_t num_pages)
         for (uint16_t i = p * 128; i < (p + 1) * 128; i++) {
             fb[i] ^= 0xFF;
         }
-    }
-}
-
-static void fb_fill_rect(uint8_t page, uint16_t x, uint8_t w, uint8_t h)
-{
-    for (uint8_t col = x; col < x + w && col < 128; col++) {
-        fb[page * 128 + col] |= (0xFF >> (8 - h));
     }
 }
 
@@ -42,23 +37,26 @@ static void display_render(void)
     fb_invert_pages(0, 2);
 
     /* BLE status: page 3 */
-    if (ble_connected) {
-        fb_fill_rect(3, 4, 6, 6);
-    }
     font_render_text(fb, FB_SIZE, "BLE", 12, 3);
     font_render_text(fb, FB_SIZE,
                      ble_connected ? "Connected" : "Scanning", 44, 3);
 
     /* LED status: page 4 */
-    if (led_on) {
-        fb_fill_rect(4, 4, 6, 6);
-    }
     font_render_text(fb, FB_SIZE, "LED", 12, 4);
     font_render_text(fb, FB_SIZE, led_on ? "ON" : "OFF", 44, 4);
 
-    /* Footer bar: pages 6-7 */
-    font_render_text(fb, FB_SIZE, "promicro", 36, 6);
-    fb_invert_pages(6, 2);
+    /* Footer: page 6 - Lux value (black background, no inversion) */
+    {
+        char buf[24];
+        int int_part = (int)current_lux;
+        int frac_part = (int)((current_lux - int_part) * 100.0f + 0.5f);
+        if (frac_part >= 100) {
+            int_part++;
+            frac_part = 0;
+        }
+        snprintf(buf, sizeof(buf), "Lux: %d.%02d", int_part, frac_part);
+        font_render_text(fb, FB_SIZE, buf, 12, 6);
+    }
 
     /* Flush to display */
     struct display_buffer_descriptor desc = {
@@ -82,6 +80,7 @@ int display_init(void)
 
     ble_connected = false;
     led_on = false;
+    current_lux = 0.0f;
     display_render();
 
     LOG_INF("Display ready");
@@ -97,5 +96,11 @@ void display_set_ble_connected(bool connected)
 void display_set_led(bool on)
 {
     led_on = on;
+    display_render();
+}
+
+void display_set_lux(float lux)
+{
+    current_lux = lux;
     display_render();
 }

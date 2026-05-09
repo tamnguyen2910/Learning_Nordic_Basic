@@ -1,8 +1,9 @@
 #include <stdint.h>
 #include <string.h>
 #include "ble.h"
-#include "led.h"
-#include "display.h"
+#include "hal/led.h"
+#include "drivers/display.h"
+#include "bluetooth/led_service.h"
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/bluetooth/bluetooth.h>
@@ -33,6 +34,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
         return;
     }
     LOG_INF("Connected");
+    led_service_connected(conn);
     led_stop_scan_blink();
     led_blink_fast(3);
     display_set_ble_connected(true);
@@ -42,6 +44,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
     LOG_INF("Disconnected, reason=%d", reason);
+    led_service_disconnected();
     led_start_scan_blink();
     display_set_ble_connected(false);
     display_set_led(false);
@@ -90,5 +93,7 @@ void ble_start_advertising(void)
     ret = bt_le_adv_start(&param, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
     if (ret < 0) {
         LOG_ERR("advertising start failed: %d", ret);
+    } else {
+        LOG_INF("Scanning");
     }
 }
